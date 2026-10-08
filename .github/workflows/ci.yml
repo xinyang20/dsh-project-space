@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.2
+          run_install: false
+      - name: Install locked dependencies
+        run: node scripts/run.mjs pnpm install --frozen-lockfile --ignore-scripts
+      - name: Typecheck, build and test
+        run: node scripts/run.mjs pnpm run check:ci
+      - name: Build distribution
+        run: node scripts/run.mjs pnpm pack --pack-destination artifacts/ci
