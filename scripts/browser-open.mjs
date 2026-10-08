@@ -1,0 +1,10 @@
+import { readFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { root, env } from './run.mjs';
+const log = await readFile(`${root}/.runtime/dsh-server.log`, 'utf8');
+const url = log.match(/http:\/\/127\.0\.0\.1:39393\/\?token=[^\s]+/)?.[0];
+if (!url) throw new Error('Start the isolated DSH instance first.');
+const child = spawn('pnpm', ['exec', 'playwright-cli', '-s=dsh-space', process.argv.includes('--reuse') ? 'goto' : 'open', url, ...(process.argv.includes('--reuse') ? [] : ['--browser=chrome', `--profile=${root}/.runtime/browser-profile`])], { cwd: root, env });
+child.stdout.on('data', chunk => process.stdout.write(String(chunk).replaceAll(url, 'http://127.0.0.1:39393/')));
+child.stderr.pipe(process.stderr);
+child.on('exit', code => { process.exitCode = code ?? 1; });

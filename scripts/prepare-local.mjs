@@ -1,0 +1,16 @@
+import { build } from 'esbuild';
+import { mkdir, symlink, writeFile, readFile, copyFile } from 'node:fs/promises';
+import path from 'node:path';
+import { root, env } from './run.mjs';
+const profile = path.join(env.DSH_HOME, 'profiles/web');
+await mkdir(`${profile}/node_modules`, { recursive: true });
+const installed = process.argv.includes('--installed');
+if (!installed) await symlink(root, `${profile}/node_modules/dsh-project-space`, 'dir').catch(error => { if (error.code !== 'EEXIST') throw error; });
+await mkdir(`${root}/.runtime/fixtures/project-a`, { recursive: true });
+await mkdir(`${root}/.runtime/fixtures/project-b`, { recursive: true });
+for (const name of ['reference-board.png', 'project-brief.pdf', 'unsafe-preview.html']) await copyFile(`${root}/tests/fixtures/${name}`, `${root}/.runtime/fixtures/${name}`);
+await writeFile(`${root}/.runtime/fixtures/project-a/report.md`, '# 设计研究\n\n这里是资源库生成成果测试。', { flag: 'wx' }).catch(error => { if (error.code !== 'EEXIST') throw error; });
+await writeFile(`${profile}/.npmrc`, (await readFile(`${root}/.npmrc`, 'utf8')).replaceAll('.cache/', `${root}/.cache/`));
+await build({ entryPoints: [`${root}/tests/fixture.ts`], outfile: `${root}/.runtime/fixture.js`, bundle: true, format: 'esm', platform: 'node', packages: 'external' });
+await writeFile(`${root}/.runtime/local.patch.yml`, `- target: workspace-controller\n  config:\n    documentsDirectory: ${JSON.stringify(`${root}/.runtime/documents`)}\n- target: tools\n  config:\n    mode: native\n- insert:\n${installed ? '' : '    - id: dsh-project-space\n      name: dsh-project-space\n'}    - id: dsh-space-test-fixture\n      name: ${JSON.stringify(`${root}/.runtime/fixture.js`)}\n`);
+console.log('Prepared isolated DSH profile and test workspace fixture.');
