@@ -16,12 +16,12 @@ async function tool(name: string, args: Record<string, unknown> = {}, project = 
   assert.equal(response.status, 200); return await response.json() as { value?: string; content?: { type: string; text?: string; attachment?: unknown }[]; isError?: boolean; error?: unknown };
 }
 test('official ToolRuntime registers a deliverable and lists/reads it with its real Agent session', async () => {
-  const project = manifest[0]; const name = `tool-report-${project.sessionId.slice(0, 8)}.md`; await writeFile(path.join(project.path, name), '# 设计研究\n\n这里是资源库生成成果测试。');
+  const project = manifest[0]; const name = 'report.md'; await writeFile(path.join(project.path, name), '# 设计研究\n\n这里是资源库生成成果测试。');
   const added = await tool('space_add_resource', { path: name, role: 'output' });
   assert.equal(added.isError, false, JSON.stringify(added));
   const records = await hostFetch(`${root}/dsh-space/api/resources?workspaceId=${project.workspaceId}`).then(r => r.json()) as { id: string; name: string; sourceSessionId?: string }[];
   const resource = records.find(r => r.name === name)!; assert.ok(resource); assert.equal(resource.sourceSessionId, project.sessionId);
-  const listed = await tool('space_list_resources'); assert.match(JSON.stringify(listed), /report\.md/);
+  const listed = await tool('space_list_resources'); assert.ok(JSON.parse(listed.value!).some((item: { id: string }) => item.id === resource.id));
   const read = await tool('space_read_resource', { id: resource.id }); assert.match(JSON.stringify(read), /设计研究/);
   const other = await tool('space_read_resource', { id: resource.id }, 1); assert.ok(other.isError || other.error || JSON.stringify(other).includes('RESOURCE_NOT_FOUND'));
 });
@@ -36,7 +36,7 @@ test('real DSH host exposes safe resource previews and denies source-session cro
   assert.equal((await upload('wrong.txt', 'test', manifest[1].sessionId)).status, 400);
   const response = await upload('reference.md', '# 用户提供的参考资料', manifest[0].sessionId); assert.equal(response.status, 201);
   const r = await response.json() as { id: string }; const result = await tool('space_read_resource', { id: r.id }); assert.match(JSON.stringify(result), /用户提供/);
-  await mkdir('test-results/host', { recursive: true }); await writeFile('test-results/host/runtime.json', JSON.stringify({ officialVersion: '0.2.0-rc.2', workspaceId: manifest[0].workspaceId, tools: ['space_add_resource', 'space_list_resources', 'space_read_resource'], passed: true }, null, 2));
+  await mkdir('test-results/host', { recursive: true }); await writeFile('test-results/host/runtime.json', JSON.stringify({ officialVersion: JSON.parse(await readFile('node_modules/@deepseek-ai/dsh/package.json', 'utf8')).version, workspaceId: manifest[0].workspaceId, tools: ['space_add_resource', 'space_list_resources', 'space_read_resource'], passed: true }, null, 2));
 });
 test('resource routes require the official DSH browser session cookie', async () => {
   assert.equal((await fetch(`${root}/dsh-space/api/workspaces`)).status, 401);

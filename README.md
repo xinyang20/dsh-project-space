@@ -6,7 +6,7 @@
 
 A workspace resource library for DeepSeek Harness: organize, preview and reuse references and deliverables across conversations.
 
-这是独立维护的社区插件。已验证 **DSH Web 0.2.0-rc.2**，使用官方 Cordis 生命周期、页面插槽和宿主服务。
+这是独立维护的社区插件。已验证 **DSH Web 0.2.3-alpha.2**，使用官方 Cordis 生命周期、页面插槽和宿主服务。
 
 ## 功能
 
@@ -21,17 +21,19 @@ A workspace resource library for DeepSeek Harness: organize, preview and reuse r
 
 ## 安装
 
-在已经安装 DSH **0.2.0-rc.2** 的环境中，下载 [v0.1.2 Release](https://github.com/xinyang20/dsh-project-space/releases/tag/v0.1.2) 的 `dsh-project-space-0.1.2.tgz`，然后执行：
+使用 DSH 插件管理页时，可以在安装来源中粘贴[预构建包地址](https://github.com/xinyang20/dsh-project-space/releases/download/v0.2.0/dsh-project-space-0.2.0.tgz)。
+
+在已经安装 DSH **0.2.3-alpha.2** 的环境中，下载 [v0.2.0 Release](https://github.com/xinyang20/dsh-project-space/releases/tag/v0.2.0) 的 `dsh-project-space-0.2.0.tgz`，然后执行：
 
 ```sh
-dsh plugin --profile web add ./dsh-project-space-0.1.2.tgz --ignore-scripts
+dsh plugin --profile web add ./dsh-project-space-0.2.0.tgz --ignore-scripts
 dsh --profile web
 ```
 
 也可以让官方安装器直接获取构建包：
 
 ```sh
-dsh plugin --profile web add https://github.com/xinyang20/dsh-project-space/releases/download/v0.1.2/dsh-project-space-0.1.2.tgz --ignore-scripts
+dsh plugin --profile web add https://github.com/xinyang20/dsh-project-space/releases/download/v0.2.0/dsh-project-space-0.2.0.tgz --ignore-scripts
 ```
 
 重新启动 DSH，点击左侧“项目资源”。如果使用其他 Web profile，把命令中的 `web` 换成自己的 profile 名称。Release 包已包含构建产物，安装时不需要运行构建脚本。
@@ -43,6 +45,8 @@ dsh plugin --profile web remove dsh-project-space
 ```
 
 卸载不会删除资源库数据。安装方式采用官方 [组合包与 profile 机制](https://deepseek-harness.github.io/deepseek-harness/develop/basic/publish)。
+
+旧宿主 DSH 0.2.0-rc.2 可继续使用 [插件 v0.1.2](https://github.com/xinyang20/dsh-project-space/releases/tag/v0.1.2)。升级插件沿用原有工作区索引和上传目录。
 
 ## 使用
 
@@ -64,11 +68,11 @@ dsh plugin --profile web remove dsh-project-space
 
 索引和上传副本保存在 `$DSH_HOME/dsh-project-space`。登记已有文件保留原路径，上传创建资料副本；移除记录不会删除原文件或上传副本。
 
-当前支持本机 DSH Web 0.2.0-rc.2。Desktop、LAN、其他 DSH 版本尚未验证。暂不包含云同步、团队共享、版本回滚、自动扫描、Office 文档预览或语义搜索。
+当前支持本机 DSH Web 0.2.3-alpha.2。Desktop、LAN、其他 DSH 版本尚未验证。暂不包含云同步、团队共享、版本回滚、自动扫描、Office 文档预览或语义搜索。
 
 ## 开发与测试
 
-使用 Node.js 22.19+ 或 24+，以及 `packageManager` 指定的 pnpm 10.33.2：
+使用 Node.js 24.22.3 至 24.x，或 26.13.1 及以上，以及 `packageManager` 指定的 pnpm 10.33.2：
 
 ```sh
 git clone https://github.com/xinyang20/dsh-project-space.git
@@ -77,7 +81,7 @@ node scripts/run.mjs pnpm install --frozen-lockfile --ignore-scripts
 node scripts/run.mjs pnpm run check:ci
 ```
 
-详细的隔离 DSH、浏览器验收和 GitHub 源码安装步骤见 [贡献说明](CONTRIBUTING.md)。2026-10-05 的本地验证通过 17 项自动化测试和 19 个浏览器场景，未调用模型 API；方法与验证边界见 [测试说明](docs/TESTING.md)、[独立审查](docs/REVIEW.md)。GitHub CI 执行类型检查、构建及存储/HTTP 测试。
+详细的隔离 DSH、浏览器验收和 GitHub 源码安装步骤见 [贡献说明](CONTRIBUTING.md)。v0.2.0 在隔离的 DSH Web 0.2.3-alpha.2 上通过 12 项存储与 HTTP 测试、6 项宿主集成测试和 19 个 Chrome 场景。详见[测试记录](docs/TESTING.md)。GitHub CI 执行类型检查、构建及存储/HTTP 测试。
 
 ## 许可
 

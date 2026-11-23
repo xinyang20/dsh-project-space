@@ -11,9 +11,8 @@ import { SpaceStore, SpaceError } from './store.js';
 import { createHandler } from './http.js';
 import { API, type SpaceInfo } from './shared.js';
 import type { ImageAttachmentRef, ImageMediaType } from '@deepseek-ai/dsh-attachment';
-import type {} from '@deepseek-ai/dsh-client-connection';
 
-export const inject = ['webServer', 'workspaceRegistry', 'sessionPersistence', 'tools', 'attachments', 'connection'];
+export const inject = ['webServer', 'workspaceRegistry', 'sessionPersistence', 'tools', 'attachments'];
 export function apply(ctx: Context): void {
   const workspaces = (): SpaceInfo[] => ctx.workspaceRegistry.list().map(w => ({ id: w.id, title: w.title, cwd: w.path }));
   const store = new SpaceStore({
@@ -25,7 +24,9 @@ export function apply(ctx: Context): void {
       return (await realpath(snapshot.header.cwd)) === workspace.cwd;
     },
   });
-  ctx.effect(() => ctx.webServer.register({ kind: 'prefix', path: API, handler: createHandler(store, workspaces, req => { const result = ctx.connection.admit(req); return 'rejection' in result ? result.rejection : undefined; }) }));
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'prefix', path: API, auth: 'required', handler: createHandler(store, workspaces),
+  }));
   async function target(exec: ToolRunContext): Promise<{ workspaceId: string; sourceSessionId: string }> {
     if (!exec.agent) throw new SpaceError('NO_SESSION', '该工具需要工作区会话。');
     const session = exec.agent.session;

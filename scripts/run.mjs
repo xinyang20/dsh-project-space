@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-export const env = { ...process.env, COREPACK_HOME: path.join(root, '.cache/corepack'), COREPACK_DEFAULT_TO_LATEST: '0', TMPDIR: path.join(root, '.cache/tmp'), XDG_CACHE_HOME: path.join(root, '.cache/xdg-cache'), XDG_DATA_HOME: path.join(root, '.cache/xdg-data'), XDG_STATE_HOME: path.join(root, '.cache/xdg-state'), npm_config_cache: path.join(root, '.cache/npm'), PLAYWRIGHT_BROWSERS_PATH: path.join(root, '.cache/browsers'), PWTEST_DAEMON_SESSION_DIR: path.join(root, '.cache/playwright-daemon'), DSH_HOME: path.join(root, '.runtime/dsh-home') };
+export const env = { ...process.env, COREPACK_HOME: path.join(root, '.cache/corepack'), COREPACK_DEFAULT_TO_LATEST: '0', TMPDIR: path.join(root, '.cache/tmp'), XDG_CACHE_HOME: path.join(root, '.cache/xdg-cache'), XDG_DATA_HOME: path.join(root, '.cache/xdg-data'), XDG_STATE_HOME: path.join(root, '.cache/xdg-state'), npm_config_cache: path.join(root, '.cache/npm'), PLAYWRIGHT_BROWSERS_PATH: path.join(root, '.cache/browsers'), PWTEST_DAEMON_SESSION_DIR: path.join(root, '.cache/playwright-daemon'), DSH_HOME: path.join(root, '.runtime/dsh-home-alpha') };
 env.PWTEST_SOCKETS_DIR = path.join(root, '.s');
 env.DSH_SPACE_TEST_ROOT = path.join(root, '.runtime/fixtures');
 // pnpm passes project config to child scripts; absolute paths keep nested profile installs in the same cache.

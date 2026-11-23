@@ -9,7 +9,9 @@ import { createHandler } from '../src/http.js';
 test('real HTTP routes, browser trust fence, safe preview, upload and non-destructive removal', async t => {
   const base = path.resolve('test-results/http'); await mkdir(base, { recursive: true }); const dir = await mkdtemp(`${base}/case-`); const cwd = path.join(dir, 'workspace'); await mkdir(cwd);
   const workspace = { id: 'a', cwd, title: 'A' }; const store = new SpaceStore({ dataDir: path.join(dir, 'data'), maxFileBytes: 1024, workspace: async id => id === 'a' ? workspace : undefined, sourceSession: async () => false });
-  const server = createServer(createHandler(store, () => [workspace])); await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve)); t.after(() => new Promise<void>(resolve => server.close(() => resolve())));
+  const handler = createHandler(store, () => [workspace]);
+  const owner = { principal: { kind: 'owner' } } as NonNullable<Parameters<typeof handler>[2]>;
+  const server = createServer((req, res) => handler(req, res, owner)); await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve)); t.after(() => new Promise<void>(resolve => server.close(() => resolve())));
   const port = (server.address() as { port: number }).port; const root = `http://127.0.0.1:${port}/dsh-space/api`;
   const post = (route: string, value: unknown, headers = {}) => fetch(`${root}${route}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify(value) });
   assert.equal((await fetch(`${root}/workspaces`)).status, 200);
@@ -25,4 +27,15 @@ test('real HTTP routes, browser trust fence, safe preview, upload and non-destru
   const preview = await fetch(`${root}/preview?${query}`); assert.equal((await preview.json() as { text: string }).text, '<svg onload="alert(1)"></svg>');
   await writeFile(path.join(cwd, 'keep.md'), 'keep'); const registration = await post('/register', { workspaceId: 'a', path: 'keep.md', role: 'output' }); const registered = await registration.json() as { id: string };
   assert.equal((await fetch(`${root}/resources?workspaceId=a&id=${registered.id}`, { method: 'DELETE' })).status, 200); assert.equal(await readFile(path.join(cwd, 'keep.md'), 'utf8'), 'keep');
+});
+
+test('host admission rejects access before listing workspaces', async t => {
+  const list = (): never => { throw new Error('Denied request reached workspace data'); };
+  const store = new SpaceStore({ dataDir: 'test-results/http', workspace: async () => undefined, sourceSession: async () => false });
+  const server = createServer(createHandler(store, list));
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise<void>(resolve => server.close(() => resolve())));
+  const port = (server.address() as { port: number }).port;
+  const response = await fetch(`http://127.0.0.1:${port}/dsh-space/api/workspaces`);
+  assert.equal(response.status, 403);
 });

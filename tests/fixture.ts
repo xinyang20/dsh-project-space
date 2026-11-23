@@ -2,14 +2,13 @@ import type { Context } from '@deepseek-ai/cordis';
 import type {} from '@deepseek-ai/dsh-workspace';
 import type {} from '@deepseek-ai/dsh-host-webserver';
 import type { ToolExecutionInput } from '@deepseek-ai/dsh-tools';
-import type {} from '@deepseek-ai/dsh-client-connection';
 import { SessionId } from '@deepseek-ai/dsh-session';
 import type { ToolCallId } from '@deepseek-ai/dsh-llm';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { randomUUID } from 'node:crypto';
 
-export const inject = ['workspaceRegistry', 'agents', 'webServer', 'tools', 'connection'];
+export const inject = ['workspaceRegistry', 'agents', 'webServer', 'tools'];
 export async function apply(ctx: Context): Promise<void> {
   const root = path.resolve(process.env.DSH_SPACE_TEST_ROOT!);
   const projects = [path.join(root, 'project-a'), path.join(root, 'project-b')];
@@ -25,10 +24,9 @@ export async function apply(ctx: Context): Promise<void> {
     result.push({ workspaceId: workspace.id, sessionId: handle.agent.session.id, path: projects[i] });
   }
   await writeFile(path.join(root, 'manifest.json'), JSON.stringify(result, null, 2));
-  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/dsh-space-test/tool', handler: async (req, res) => {
+  ctx.effect(() => ctx.webServer.register({ kind: 'exact', path: '/dsh-space-test/tool', auth: 'required', handler: async (req, res, peer) => {
     if (req.socket.remoteAddress !== '127.0.0.1' || !/^(localhost|127\.0\.0\.1)(?::\d+)?$/.test(req.headers.host ?? '') || req.headers['sec-fetch-site'] === 'cross-site' || (req.headers.origin && req.headers.origin !== `http://${req.headers.host}`)) { res.writeHead(403).end(); return; }
-    const admission = ctx.connection.admit(req);
-    if ('rejection' in admission) { res.writeHead(admission.rejection).end(); return; }
+    if (peer?.principal.kind !== 'owner') { res.writeHead(403).end(); return; }
     if (req.method !== 'POST') { res.writeHead(405).end(); return; }
     if (req.headers['content-type']?.split(';')[0].trim() !== 'application/json') { res.writeHead(415).end(); return; }
     let bytes = 0;
@@ -39,7 +37,11 @@ export async function apply(ctx: Context): Promise<void> {
     catch { res.writeHead(400).end(); return; }
     const project = data.project ?? 0;
     if (typeof data.name !== 'string' || !['space_add_resource', 'space_list_resources', 'space_read_resource'].includes(data.name) || typeof project !== 'number' || !Number.isInteger(project) || !agents[project] || (data.arguments !== undefined && (!data.arguments || typeof data.arguments !== 'object' || Array.isArray(data.arguments)))) { res.writeHead(400).end(); return; }
-    const outcome = await ctx.tools.execute({ callId: randomUUID() as ToolCallId, name: data.name, arguments: data.arguments as Record<string, unknown> ?? {}, agent: agents[project], signal: new AbortController().signal });
+    const batch = await ctx.tools.execute({
+      calls: [{ type: 'tool-call', id: randomUUID() as ToolCallId, name: data.name, arguments: JSON.stringify(data.arguments ?? {}) }],
+      agent: agents[project], signal: new AbortController().signal,
+    });
+    const outcome = batch.results[0].result;
     res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(outcome));
   } }));
 }

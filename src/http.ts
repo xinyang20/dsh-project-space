@@ -1,3 +1,4 @@
+import type { WebRoute } from '@deepseek-ai/dsh-host-webserver';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { SpaceInfo, ResourceRole } from './shared.js';
 import { API } from './shared.js';
@@ -39,12 +40,11 @@ function role(value: unknown): ResourceRole {
   if (value !== 'input' && value !== 'output') throw new SpaceError('INVALID_ROLE', '请选择输入资料或生成成果。');
   return value;
 }
-export function createHandler(store: SpaceStore, workspaces: () => SpaceInfo[], admission?: (req: IncomingMessage) => 401 | 403 | undefined) {
-  return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
+export function createHandler(store: SpaceStore, workspaces: () => SpaceInfo[]): WebRoute['handler'] {
+  return async (req: IncomingMessage, res: ServerResponse, peer): Promise<void> => {
     try {
       fence(req);
-      const rejection = admission?.(req);
-      if (rejection) throw new SpaceError('UNAUTHENTICATED', '请先通过 DSH 登录链接打开网页。', rejection);
+      if (peer?.principal.kind !== 'owner') throw new SpaceError('FORBIDDEN', '当前连接无权访问项目资源。', 403);
       const url = new URL(req.url ?? '/', `http://${req.headers.host}`);
       const route = url.pathname.slice(API.length);
       const workspaceId = url.searchParams.get('workspaceId') ?? '';

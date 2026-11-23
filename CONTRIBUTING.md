@@ -1,6 +1,6 @@
 # 贡献与本地开发
 
-Node.js 22.19+ 或 24+，pnpm 10.33.2。保留 pnpm-lock.yaml，使用 pnpm 管理依赖和运行命令。
+Node.js 24.22.3 至 24.x，或 26.13.1 及以上，pnpm 10.33.2。保留 pnpm-lock.yaml，使用 pnpm 管理依赖和运行命令。
 
 ## 基础检查
 
@@ -20,7 +20,7 @@ node scripts/prepare-local.mjs
 node scripts/run.mjs pnpm run dev:isolated > .runtime/dsh-server.log 2>&1
 ```
 
-独立 DSH_HOME 位于 `.runtime/dsh-home`，示例工作区位于 `.runtime/fixtures`。开发启动脚本固定使用项目依赖中的 DSH 0.2.0-rc.2。默认演示端口为 39393，若端口已被使用，请先停止自己启动的测试实例。
+独立 DSH_HOME 位于 `.runtime/dsh-home-alpha`，示例工作区位于 `.runtime/fixtures`。开发启动脚本固定使用项目依赖中的 DSH 0.2.3-alpha.2。默认演示端口为 39393，若端口已被使用，请先停止自己启动的测试实例。
 
 在另一个终端运行真实宿主检查：
 
@@ -51,7 +51,7 @@ prepare 脚本在打包前构建 lib/index.js 和官方 ModuleLoader 浏览器�
 推荐使用 README 中的预构建 Release 包。需要直接安装源码时，可以固定版本：
 
 ```sh
-dsh plugin --profile web add github:xinyang20/dsh-project-space#v0.1.2
+dsh plugin --profile web add github:xinyang20/dsh-project-space#v0.2.0
 ```
 
 Git 依赖的 prepare 脚本需要构建授权。首次安装如果被阻止，请按正在执行的 pnpm 打印的提示，将确切包键加入该 profile 的 pnpm-workspace.yaml：本项目使用的 pnpm 10.33.2 使用 onlyBuiltDependencies，支持 allowBuilds 的较新版本使用 allowBuilds，然后重新安装。授权前请检查代码；prepare 会在宿主机器运行，不能依赖 agent 沙箱。具体机制见 [DSH 官方打包文档](https://deepseek-harness.github.io/deepseek-harness/develop/basic/publish)，配置字段以实际 pnpm 版本的提示为准。

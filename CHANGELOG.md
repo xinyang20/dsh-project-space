@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 — 2026-11-23
+
+- Target DSH Web 0.2.3-alpha.2 and declare the tested host version in engines.dsh.
+- Restrict resource routes to the local owner and propagate temporary host authentication failures as HTTP 503.
+- Update integration tests to the batch tool executor. The resource index and uploaded files retain their existing format and location.
+- For DSH Web 0.2.0-rc.2, use plugin v0.1.2.
+
 ## 0.1.2 — 2026-10-08
 
 First public release of DSH Project Space, an independently maintained community plugin for DSH Web 0.2.0-rc.2.

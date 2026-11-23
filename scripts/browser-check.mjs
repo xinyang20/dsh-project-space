@@ -41,7 +41,8 @@ async function upload(name) {
   await pw('run-code', `await page.getByLabel('上传文件',{exact:true}).setInputFiles(${JSON.stringify(path.join(root, '.runtime/fixtures', name))}); await page.getByRole('button',{name:${JSON.stringify('预览 '+name)},exact:true}).first().waitFor();`);
 }
 try {
-  const first = await snapshot(); if (first.includes('button "稍后配置"')) await click('button', '稍后配置');
+  if ((await snapshot()).includes('dialog "预览版说明"')) await click('button', '继续');
+  if ((await snapshot()).includes('dialog "开始使用"')) await click('button', '关闭');
   if (!remaining) {
   await check('official slots and persisted deliverable card', async () => { await openLibrary(0); assert.match(await snapshot(), /预览 report\.md/); });
   await check('text preview and source-session navigation', async () => { await click('button', '预览 report.md'); assert.match(await snapshot(), /这里是资源库生成成果测试/); await click('button', '来源会话'); assert.match(await snapshot(), /generic[^\n]*设计研究/); });
@@ -75,5 +76,5 @@ try {
   await check('workspace isolation in the browser', async () => { await select('工作区', projects[1].workspaceId); assert.doesNotMatch(await snapshot(), /预览 reference-board|预览 report\.md|预览 project-brief/); await select('工作区', projects[0].workspaceId); });
   await pw('resize', '1440', '1000'); await pw('screenshot', '--filename='+path.join(output, 'space-desktop.png'));
   await check('responsive layout stays within the viewport', async () => { await pw('resize', '720', '900'); assert.match(await pw('eval', '() => document.documentElement.scrollWidth <= window.innerWidth'), /true/); await pw('screenshot', '--filename='+path.join(output, 'space-narrow.png')); await pw('resize', '1440', '1000'); });
-  await writeFile(`${output}/acceptance.json`, JSON.stringify({ officialVersion: '0.2.0-rc.2', browser: 'Chrome', passed, complete: true }, null, 2)); console.log(`${passed.length} browser acceptance checks passed.`);
+  await writeFile(`${output}/acceptance.json`, JSON.stringify({ officialVersion: JSON.parse(await readFile(`${root}/node_modules/@deepseek-ai/dsh/package.json`, 'utf8')).version, browser: 'Chrome', passed, complete: true }, null, 2)); console.log(`${passed.length} browser acceptance checks passed.`);
 } catch (error) { console.error(error.message); await writeFile(`${output}/acceptance.json`, JSON.stringify({ passed, complete: false, failure: error.message }, null, 2)); process.exitCode = 1; }
